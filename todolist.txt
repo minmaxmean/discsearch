@@ -1,0 +1,4 @@
+- Save Spotify User Tracks, Albums, Artists in DB
+- Match Spotify Album to Discogs Album
+- Get Discogs Seller Inventory
+- Build potential shopping list from Seller Inventory
