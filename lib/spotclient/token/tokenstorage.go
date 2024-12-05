@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/m-nny/discsearch/lib/utils"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"golang.org/x/oauth2"
 )
@@ -43,7 +45,10 @@ func GetToken(ctx context.Context, auth *spotifyauth.Authenticator, serverAddres
 func GetFreshToken(ctx context.Context, auth *spotifyauth.Authenticator, serverAddress string) (*oauth2.Token, error) {
 	state := getState()
 	url := auth.AuthURL(state)
-	slog.Info("Login using following url", "url", url)
+	fmt.Fprintf(os.Stderr, "Login using following url: %s\n", url)
+	if err := utils.OpenBrowser(url); err != nil {
+		slog.ErrorContext(ctx, "Could not automatically open browser: %v", "err", err)
+	}
 	tokenCh := make(chan *oauth2.Token)
 	errCh := make(chan error)
 	callbackHandler := func(w http.ResponseWriter, r *http.Request) {
@@ -80,15 +85,24 @@ func getState() string {
 }
 
 var (
-	tsType = flag.String("spotify_tstype", "json", "")
+	tsType      = flag.String("spotify_tstype", "json", "")
+	tsSingleton TokenStorage
 )
 
 func GetTokenStorage() (TokenStorage, error) {
+	if tsSingleton != nil {
+		return tsSingleton, nil
+	}
 	if *tsType == "inmemory" {
-		return NewInMemoryTokenStorage(), nil
+		tsSingleton = NewInMemoryTokenStorage()
 	} else if *tsType == "json" {
-		return NewJsonTokenStorage()
+		if ts, err := NewJsonTokenStorage(); err != nil {
+			return nil, err
+		} else {
+			tsSingleton = ts
+		}
 	} else {
 		return nil, fmt.Errorf("unknown token storage type: %q", *tsType)
 	}
+	return tsSingleton, nil
 }

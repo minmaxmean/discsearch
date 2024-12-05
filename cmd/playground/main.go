@@ -5,9 +5,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/m-nny/discsearch/lib/spotclient"
-	"github.com/m-nny/discsearch/lib/spotclient/token"
-	"github.com/m-nny/discsearch/lib/utils"
+	"github.com/m-nny/discsearch/cmd/common"
 	"golang.org/x/exp/slog"
 )
 
@@ -25,21 +23,15 @@ func main() {
 }
 
 func runApp(ctx context.Context) error {
-	if err := utils.LoadFlagsFromEnv(); err != nil {
-		return fmt.Errorf("error loading flag: %w", err)
-	}
-	ts, err := token.GetTokenStorage()
+	app, err := common.GetApp(ctx, *username)
 	if err != nil {
 		return err
 	}
-	spotifyClient, err := spotclient.New(ctx, *username, ts)
+	tracks, err := app.SpotifyClient.SavedTracks(ctx)
 	if err != nil {
 		return err
 	}
-	if err := spotifyClient.Ping(ctx); err != nil {
-		return err
-	}
-	slog.Debug("runApp", "spotifyClient", spotifyClient)
+	slog.Debug("saved tracks", "tracks", tracks)
 
 	return nil
 }

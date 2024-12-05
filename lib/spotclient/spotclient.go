@@ -19,7 +19,8 @@ var (
 )
 
 type SpotifyClient struct {
-	client *spotify.Client
+	client   *spotify.Client
+	username string
 }
 
 func validateFlags() error {
@@ -50,7 +51,7 @@ func New(ctx context.Context, username string, tokenStorage token.TokenStorage) 
 		return nil, err
 	}
 	client := spotify.New(auth.Client(ctx, token))
-	return &SpotifyClient{client: client}, nil
+	return &SpotifyClient{client: client, username: username}, nil
 }
 
 func (s *SpotifyClient) Ping(ctx context.Context) error {
